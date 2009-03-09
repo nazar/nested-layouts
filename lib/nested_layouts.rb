@@ -15,16 +15,18 @@ module ActionView #:nodoc:
           #the current theme may or may not override the requested layout. Check if it exists in the current theme
           dir = File.join(Rails.root, 'themes', controller.current_theme, 'views', 'layouts')
           #check if layout has been overridden in the theme... if not then default app/views/layouts
-          layout = Dir.entries(dir).detect { |a| /#{layout}/.match(a) }
-          dir = File.join(Rails.root, 'app', 'views', 'layouts') unless File.exists?(File.join(dir, layout))
+          theme_layout = Dir.entries(dir).detect { |a| /^#{layout}\./.match(a) }
+          #
+          raise "Could not file layout #{layout} in dir #{dir}" if theme_layout.blank?
+          dir = File.join(Rails.root, 'app', 'views', 'layouts') unless File.exists?(File.join(dir, theme_layout))
         else #theme support plugin not installed... continue...
-          dir = File.join(Rails.root, 'app', 'views', 'layouts')
-          layout = Dir.entries(dir).detect { |a| /#{layout}/.match(a) }
+          dir          = File.join(Rails.root, 'app', 'views', 'layouts')
+          theme_layout = Dir.entries(dir).detect { |a| /^#{layout}\./.match(a) }
         end
 
         @template.instance_variable_set('@content_for_layout', capture(&block))
         concat(
-          @template.render(:file => File.join(dir, layout), :user_full_path => true),
+          @template.render(:file => File.join(dir, theme_layout), :user_full_path => true),
           binding
         )
       end
